@@ -1,0 +1,288 @@
+from datetime import date, datetime
+
+from pydantic import BaseModel, Field
+
+from app.core.enums import InventoryChangeType, ProductSaleStatus
+
+
+class AdminProductBaseRequest(BaseModel):
+    category_id: int
+    product_name: str = Field(min_length=1, max_length=255)
+
+    sale_status: ProductSaleStatus
+
+    catalog_external_id: str | None = None
+    catalog_name: str | None = None
+    current_lowest_price: int | None = Field(default=None, ge=0)
+
+    sale_price: int = Field(ge=0)
+    cost_price: int = Field(ge=0)
+
+    ai_pricing_enabled: bool = False
+    min_price_limit: int | None = Field(default=None, ge=0)
+    max_price_limit: int | None = Field(default=None, ge=0)
+    price_per_time: int | None = Field(default=None, ge=0)
+
+    stock_qty: int = Field(ge=0)
+    safety_stock_qty: int = Field(ge=0)
+    expiration_date: date | None = None
+
+    description_html: str | None = None
+
+    brand_name: str | None = None
+    origin_country: str | None = None
+
+    shipping_fee: int = Field(default=0, ge=0)
+
+    thumbnail_image_url: str | None = None
+    detail_image_urls: list[str] = Field(default_factory=list)
+
+
+class AdminProductCreateRequest(AdminProductBaseRequest):
+    product_code: str = Field(min_length=1, max_length=50)
+
+
+class AdminProductUpdateRequest(AdminProductBaseRequest):
+    pass
+
+class AdminProductSaleStatusUpdateRequest(BaseModel):
+    sale_status: str
+
+class AdminProductCreateResponse(BaseModel):
+    id: int
+    product_code: str
+    product_name: str
+    message: str
+
+
+class AdminProductUpdateResponse(BaseModel):
+    id: int
+    product_code: str
+    product_name: str
+    message: str
+
+
+class AdminProductDetailResponse(BaseModel):
+    product_code: str
+    category_id: int
+    product_name: str
+    sale_status: ProductSaleStatus
+
+    catalog_external_id: str | None = None
+    catalog_name: str | None = None
+    current_lowest_price: int | None = None
+
+    sale_price: int
+    cost_price: int
+
+    ai_pricing_enabled: bool
+    min_price_limit: int | None = None
+    max_price_limit: int | None = None
+    price_per_time: int | None = None
+
+    stock_qty: int
+    safety_stock_qty: int
+    expiration_date: date | None = None
+
+    description_html: str | None = None
+
+    brand_name: str | None = None
+    origin_country: str | None = None
+
+    shipping_fee: int
+
+    thumbnail_image_url: str | None = None
+    detail_image_urls: list[str] = Field(default_factory=list)
+
+
+class ProductImageUploadResponse(BaseModel):
+    image_url: str
+    public_id: str
+
+
+class CatalogNameResolveResponse(BaseModel):
+    external_catalog_id: str
+    catalog_name: str | None = None
+    current_lowest_price: int | None = None
+
+
+class AdminProductListItemResponse(BaseModel):
+    id: int
+    product_code: str
+    product_name: str
+    category_id: int
+    category_name: str
+    sale_price: int
+    stock_qty: int
+    sale_status: str
+    updated_at: datetime
+    ai_pricing_enabled: bool
+
+
+class AdminProductListSummaryResponse(BaseModel):
+    total_count: int
+    sale_count: int
+    sold_out_count: int
+    ai_enabled_count: int
+
+    total_diff: int
+    sale_diff: int
+    sold_out_diff: int
+    ai_enabled_diff: int
+
+
+class AdminProductListResponse(BaseModel):
+    items: list[AdminProductListItemResponse]
+    summary: AdminProductListSummaryResponse
+    page: int
+    size: int
+    total: int
+    total_pages: int
+
+
+class AdminPriceSearchItemResponse(BaseModel):
+    id: int
+    product_code: str
+    product_name: str
+    sale_status: ProductSaleStatus
+
+    category_id: int
+    category_path: str | None = None
+    catalog_external_id: str | None = None
+
+    sale_price: int
+    ai_pricing_enabled: bool
+    min_price_limit: int | None = None
+    max_price_limit: int | None = None
+
+    stock_qty: int
+
+    market_lowest_price: int | None = None
+    is_lowest_price: bool | None = None
+    price_gap: int | None = None
+    price_gap_rate: float | None = None
+
+    updated_at: datetime
+
+
+class AdminPriceSearchListResponse(BaseModel):
+    items: list[AdminPriceSearchItemResponse] = Field(default_factory=list)
+
+
+class AdminLiveInventoryItemResponse(BaseModel):
+    id: int
+    product_code: str
+    product_name: str
+    total_stock: int
+    available_stock: int
+    safety_stock_qty: int
+    inventory_status: str
+    purchase_price: int
+    asset_amount: int
+    sale_status: ProductSaleStatus
+    category: str | None = None
+
+
+class AdminLiveInventoryListResponse(BaseModel):
+    items: list[AdminLiveInventoryItemResponse] = Field(default_factory=list)
+
+
+class AdminLiveInventoryUpdateRequest(BaseModel):
+    sale_status: ProductSaleStatus
+
+
+class AdminLiveInventoryUpdateResponse(BaseModel):
+    id: int
+    product_code: str
+    sale_status: ProductSaleStatus
+    message: str
+
+
+class AdminInboundCreateRequest(BaseModel):
+    product_code: str = Field(min_length=1, max_length=50)
+    inbound_qty: int = Field(ge=1)
+    expiration_date: date | None = None
+    note: str | None = Field(default=None, max_length=255)
+
+
+class AdminInboundCreateResponse(BaseModel):
+    id: int
+    product_code: str
+    product_name: str
+    qty_before: int
+    inbound_qty: int
+    qty_after: int
+    expiration_date: date | None = None
+    message: str
+
+
+class AdminInventoryHistoryItemResponse(BaseModel):
+    id: int
+    product_id: int
+    product_code: str
+    product_name: str
+    change_type: InventoryChangeType
+    change_type_label: str
+    qty_before: int
+    change_qty: int
+    qty_after: int
+    note: str | None = None
+    occurred_at: datetime
+
+
+class AdminInventoryHistoryListResponse(BaseModel):
+    items: list[AdminInventoryHistoryItemResponse] = Field(default_factory=list)
+
+
+class AdminProductAiPricingUpdateRequest(BaseModel):
+    ai_pricing_enabled: bool
+
+
+class AdminProductAiPricingUpdateResponse(BaseModel):
+    id: int
+    product_code: str
+    ai_pricing_enabled: bool
+    message: str
+
+
+class AdminMatchingSummaryPeriodResponse(BaseModel):
+    start_date: date
+    end_date: date
+
+
+class AdminMatchingSummaryCardResponse(BaseModel):
+    value: int
+    change: int
+    change_label: str
+    up: bool
+
+
+class AdminMatchingSummaryDataResponse(BaseModel):
+    total_products: AdminMatchingSummaryCardResponse
+    ai_pricing_products: AdminMatchingSummaryCardResponse
+    matched_products: AdminMatchingSummaryCardResponse
+    unmatched_products: AdminMatchingSummaryCardResponse
+
+
+class AdminMatchingSummaryResponse(BaseModel):
+    current_period: AdminMatchingSummaryPeriodResponse
+    previous_period: AdminMatchingSummaryPeriodResponse
+    summary: AdminMatchingSummaryDataResponse
+
+
+class AdminInventoryHistorySummaryResponse(BaseModel):
+    total_count: int
+    total_diff: int
+    inbound_sku_count: int
+    inbound_qty: int
+    inbound_sku_diff: int
+    inbound_qty_diff: int
+    outbound_sku_count: int
+    outbound_qty: int
+    outbound_sku_diff: int
+    outbound_qty_diff: int
+
+
+class AdminLiveInventorySummaryResponse(BaseModel):
+    total_count: int
+    total_diff: int
